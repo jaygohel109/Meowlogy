@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
+import { FaPaw, FaRandom, FaPlus, FaSyncAlt } from 'react-icons/fa';
 
 function App() {
   const [facts, setFacts] = useState([]);
@@ -130,18 +131,21 @@ function App() {
             className={`tab ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
+            <FaPaw className="tab-icon" />
             All Facts
           </button>
           <button 
             className={`tab ${activeTab === 'random' ? 'active' : ''}`}
             onClick={() => setActiveTab('random')}
           >
+            <FaRandom className="tab-icon" />
             Random Fact
           </button>
           <button 
             className={`tab ${activeTab === 'add' ? 'active' : ''}`}
             onClick={() => setActiveTab('add')}
           >
+            <FaPlus className="tab-icon" />
             Add Fact
           </button>
           <img 
@@ -173,13 +177,15 @@ function App() {
             <div className="section-header">
               <h2>All Cat Facts</h2>
               <button onClick={fetchAllFacts} className="refresh-btn">
-                🔄 Refresh
+                <FaSyncAlt className="refresh-icon" />
+                Refresh
               </button>
             </div>
             <div className="facts-grid">
               {facts.map((fact, index) => (
                 <div key={index} className="fact-card">
                   <p>{fact.fact}</p>
+                  <div className="fact-paw"></div>
                 </div>
               ))}
             </div>
@@ -218,6 +224,7 @@ function App() {
               />
               <button type="submit" disabled={loading || !newFact.trim()}>
                 {loading ? 'Adding...' : 'Add Fact'}
+                <FaPaw className="paw-icon" />
               </button>
             </form>
           </div>
@@ -226,6 +233,11 @@ function App() {
 
       <footer className="App-footer">
         <p>Powered by FastAPI & React 🚀</p>
+        <div className="footer-paws">
+          <FaPaw />
+          <FaPaw />
+          <FaPaw />
+        </div>
       </footer>
     </div>
   );
