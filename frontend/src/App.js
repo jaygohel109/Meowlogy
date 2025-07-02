@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import { FaPaw, FaRandom, FaPlus, FaSyncAlt } from 'react-icons/fa';
+import CatCareChatBubble from './CatCareChatBubble';
+
 
 function App() {
   const [facts, setFacts] = useState([]);
@@ -12,7 +14,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('all');
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
   // Fetch all facts
   const fetchAllFacts = async () => {
@@ -239,6 +241,8 @@ function App() {
           <FaPaw />
         </div>
       </footer>
+
+      <CatCareChatBubble />
     </div>
   );
 }

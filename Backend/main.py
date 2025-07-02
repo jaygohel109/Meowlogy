@@ -1,7 +1,16 @@
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from supabase_db import SupabaseCatFactsDB
 from typing import List, Dict, Any
+from Models.openAI_model import AIRequest
+from dotenv import load_dotenv
+import os
+import openai
+
+load_dotenv()
+
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI(title="Cat Facts API", description="API for managing cat facts with Supabase")
 
@@ -137,6 +146,36 @@ async def health_check():
         "database": db_status,
         "backend": "Supabase"
     }
+
+@app.post("/api/ask-ai")
+async def ask_ai(request: AIRequest):
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(status_code=500, detail="OpenAI API key not set")
+    try:
+        system_prompt = (
+            "You are a helpful assistant for cat care questions. "
+            "Always be friendly, concise, and accurate."
+        )
+        # Use OpenAI's streaming API
+        def stream():
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",  # or "gpt-4"
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": request.question}
+                ],
+                max_tokens=256,
+                temperature=0.7,
+                stream=True
+            )
+            for chunk in response:
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield content
+
+        return StreamingResponse(stream(), media_type="text/plain")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -133,7 +133,7 @@ class SupabaseCatFactsDB:
         """Get a random cat fact from the database"""
         try:
             # Using PostgreSQL's RANDOM() function
-            result = self.client.rpc('get_random_fact').execute()
+            result = self.client.rpc('get_random_fact', {}).execute()
             
             if result.data:
                 return result.data[0]
