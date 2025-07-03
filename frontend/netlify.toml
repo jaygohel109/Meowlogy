@@ -1,12 +1,9 @@
 [build]
-  # Directory to change to before starting a build
-  base = "Meowlogy/frontend"
-  
   # Directory to publish (relative to root of your repo)
-  publish = "build"
+  publish = "Meowlogy/frontend/build"
   
   # Default build command
-  command = "npm run build"
+  command = "cd Meowlogy/frontend && npm run build"
 
 [build.environment]
   # Node version to use for the build
