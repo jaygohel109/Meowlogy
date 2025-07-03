@@ -196,7 +196,7 @@ function App() {
             Logout
           </button>
           <img 
-            src="http://thecraftchop.com/files/others/holdingcat.svg" 
+            src="/holdingcat.svg" 
             className="cat-icon" 
             alt="Cute cat icon"
           />
