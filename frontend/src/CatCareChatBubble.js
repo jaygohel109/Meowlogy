@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './CatCareChatBubble.css';
 import { FaPaw } from 'react-icons/fa';
 
-const API_URL = 'http://localhost:8000/api/ask-ai'; // Update if backend URL changes
+const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/ask-ai`;
 
 const CatCareChatBubble = () => {
   const [open, setOpen] = useState(false);
