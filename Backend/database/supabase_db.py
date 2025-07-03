@@ -2,22 +2,36 @@ import os
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from supabase import create_client, Client
-from dotenv import load_dotenv
 import uuid
+import logging
+from constants import (
+    SUPABASE_URL, 
+    SUPABASE_ANON_KEY, 
+    CAT_FACTS_TABLE, 
+    FACT_LIKES_TABLE,
+    ERROR_MESSAGES,
+    SUCCESS_MESSAGES
+)
+from exceptions import DatabaseException, ConfigurationException
 
-# Load environment variables
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 class SupabaseCatFactsDB:
     def __init__(self):
         """Initialize Supabase client"""
-        self.supabase_url = os.getenv("SUPABASE_URL")
-        self.supabase_key = os.getenv("SUPABASE_ANON_KEY")
+        self.supabase_url = SUPABASE_URL
+        self.supabase_key = SUPABASE_ANON_KEY
         
         if not self.supabase_url or not self.supabase_key:
-            raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables")
+            raise ConfigurationException(ERROR_MESSAGES["supabase_credentials_missing"])
         
-        self.client: Client = create_client(self.supabase_url, self.supabase_key)
+        try:
+            self.client: Client = create_client(self.supabase_url, self.supabase_key)
+            logger.info(SUCCESS_MESSAGES["database_connected"])
+        except Exception as e:
+            logger.error(f"Failed to initialize Supabase client: {e}")
+            raise DatabaseException(f"Failed to connect to Supabase: {e}")
+        
         self.init_db()
     
     def init_db(self):
@@ -27,7 +41,7 @@ class SupabaseCatFactsDB:
         
         # SQL for creating the cat_facts table:
         """
-        CREATE TABLE cat_facts (
+        CREATE TABLE {CAT_FACTS_TABLE} (
             id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
             fact TEXT NOT NULL UNIQUE,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -43,7 +57,7 @@ class SupabaseCatFactsDB:
         CREATE POLICY "Allow all operations" ON cat_facts FOR ALL USING (true);
         
         -- Create likes table for future use
-        CREATE TABLE fact_likes (
+        CREATE TABLE {FACT_LIKES_TABLE} (
             id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
             fact_id UUID REFERENCES cat_facts(id) ON DELETE CASCADE,
             user_id UUID, -- Will be used when you add authentication
@@ -72,7 +86,7 @@ class SupabaseCatFactsDB:
         
         -- Create trigger for likes_count
         CREATE TRIGGER update_likes_count_trigger
-        AFTER INSERT OR DELETE ON fact_likes
+        AFTER INSERT OR DELETE ON {FACT_LIKES_TABLE}
         FOR EACH ROW EXECUTE FUNCTION update_likes_count();
         """
     
@@ -80,35 +94,39 @@ class SupabaseCatFactsDB:
         """Insert a new cat fact, returns result with status and data"""
         try:
             # Check if fact already exists
-            existing = self.client.table('cat_facts').select('id').eq('fact', fact).execute()
+            existing = self.client.table(CAT_FACTS_TABLE).select('id').eq('fact', fact).execute()
             if existing.data:
+                logger.warning(f"Attempted to insert duplicate fact: {fact[:50]}...")
                 return {
                     "success": False,
-                    "message": "Fact already exists",
+                    "message": ERROR_MESSAGES["duplicate_fact"],
                     "status": "duplicate"
                 }
             
             # Insert new fact
-            result = self.client.table('cat_facts').insert({
+            result = self.client.table(CAT_FACTS_TABLE).insert({
                 'fact': fact,
                 'created_at': datetime.utcnow().isoformat()
             }).execute()
             
             if result.data:
+                logger.info(f"Successfully inserted fact: {fact[:50]}...")
                 return {
                     "success": True,
-                    "message": "Fact added successfully",
+                    "message": SUCCESS_MESSAGES["fact_added"],
                     "status": "success",
                     "data": result.data[0]
                 }
             else:
+                logger.error("Failed to insert fact - no data returned")
                 return {
                     "success": False,
-                    "message": "Failed to add fact",
+                    "message": ERROR_MESSAGES["failed_to_add_fact"],
                     "status": "error"
                 }
                 
         except Exception as e:
+            logger.error(f"Database error while inserting fact: {e}")
             return {
                 "success": False,
                 "message": f"Database error: {str(e)}",
@@ -118,16 +136,18 @@ class SupabaseCatFactsDB:
     def get_all_facts(self) -> List[Dict[str, Any]]:
         """Get all active cat facts from the database"""
         try:
-            result = self.client.table('cat_facts')\
+            result = self.client.table(CAT_FACTS_TABLE)\
                 .select('id, fact, created_at, likes_count')\
                 .eq('is_active', True)\
                 .order('created_at', desc=True)\
                 .execute()
             
-            return result.data if result.data else []
+            facts = result.data if result.data else []
+            logger.info(f"Retrieved {len(facts)} facts from database")
+            return facts
         except Exception as e:
-            print(f"Error fetching facts: {e}")
-            return []
+            logger.error(f"Error fetching facts: {e}")
+            raise DatabaseException(f"Failed to fetch facts: {e}")
     
     def get_random_fact(self) -> Optional[Dict[str, Any]]:
         """Get a random cat fact from the database"""
@@ -136,34 +156,42 @@ class SupabaseCatFactsDB:
             result = self.client.rpc('get_random_fact', {}).execute()
             
             if result.data:
+                logger.info("Retrieved random fact using RPC function")
                 return result.data[0]
             else:
                 # Fallback method if RPC function doesn't exist
-                result = self.client.table('cat_facts')\
+                result = self.client.table(CAT_FACTS_TABLE)\
                     .select('id, fact, created_at, likes_count')\
                     .eq('is_active', True)\
                     .limit(1)\
                     .execute()
                 
-                return result.data[0] if result.data else None
+                fact = result.data[0] if result.data else None
+                if fact:
+                    logger.info("Retrieved random fact using fallback method")
+                else:
+                    logger.warning("No facts found in database")
+                return fact
                 
         except Exception as e:
-            print(f"Error fetching random fact: {e}")
-            return None
+            logger.error(f"Error fetching random fact: {e}")
+            raise DatabaseException(f"Failed to fetch random fact: {e}")
     
     def fact_exists(self, fact: str) -> bool:
         """Check if a fact already exists in the database"""
         try:
-            result = self.client.table('cat_facts')\
+            result = self.client.table(CAT_FACTS_TABLE)\
                 .select('id')\
                 .eq('fact', fact)\
                 .eq('is_active', True)\
                 .execute()
             
-            return len(result.data) > 0
+            exists = len(result.data) > 0
+            logger.debug(f"Fact existence check for '{fact[:30]}...': {exists}")
+            return exists
         except Exception as e:
-            print(f"Error checking fact existence: {e}")
-            return False
+            logger.error(f"Error checking fact existence: {e}")
+            raise DatabaseException(f"Failed to check fact existence: {e}")
     
     def like_fact(self, fact_id: str, user_id: str = None) -> Dict[str, Any]:
         """Like a fact (for future use)"""
@@ -172,23 +200,26 @@ class SupabaseCatFactsDB:
             # In the future, you can integrate with Supabase Auth
             temp_user_id = user_id or str(uuid.uuid4())
             
-            result = self.client.table('fact_likes').insert({
+            result = self.client.table(FACT_LIKES_TABLE).insert({
                 'fact_id': fact_id,
                 'user_id': temp_user_id
             }).execute()
             
             if result.data:
+                logger.info(f"Successfully liked fact: {fact_id}")
                 return {
                     "success": True,
-                    "message": "Fact liked successfully"
+                    "message": SUCCESS_MESSAGES["fact_liked"]
                 }
             else:
+                logger.error(f"Failed to like fact: {fact_id}")
                 return {
                     "success": False,
-                    "message": "Failed to like fact"
+                    "message": ERROR_MESSAGES["failed_to_like_fact"]
                 }
                 
         except Exception as e:
+            logger.error(f"Error liking fact {fact_id}: {e}")
             return {
                 "success": False,
                 "message": f"Error liking fact: {str(e)}"
@@ -199,18 +230,20 @@ class SupabaseCatFactsDB:
         try:
             temp_user_id = user_id or str(uuid.uuid4())
             
-            result = self.client.table('fact_likes')\
+            result = self.client.table(FACT_LIKES_TABLE)\
                 .delete()\
                 .eq('fact_id', fact_id)\
                 .eq('user_id', temp_user_id)\
                 .execute()
             
+            logger.info(f"Successfully unliked fact: {fact_id}")
             return {
                 "success": True,
-                "message": "Fact unliked successfully"
+                "message": SUCCESS_MESSAGES["fact_unliked"]
             }
                 
         except Exception as e:
+            logger.error(f"Error unliking fact {fact_id}: {e}")
             return {
                 "success": False,
                 "message": f"Error unliking fact: {str(e)}"
@@ -219,37 +252,45 @@ class SupabaseCatFactsDB:
     def get_fact_by_id(self, fact_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific fact by ID"""
         try:
-            result = self.client.table('cat_facts')\
+            result = self.client.table(CAT_FACTS_TABLE)\
                 .select('id, fact, created_at, likes_count')\
                 .eq('id', fact_id)\
                 .eq('is_active', True)\
                 .execute()
             
-            return result.data[0] if result.data else None
+            fact = result.data[0] if result.data else None
+            if fact:
+                logger.info(f"Retrieved fact by ID: {fact_id}")
+            else:
+                logger.warning(f"Fact not found with ID: {fact_id}")
+            return fact
         except Exception as e:
-            print(f"Error fetching fact by ID: {e}")
-            return None
+            logger.error(f"Error fetching fact by ID {fact_id}: {e}")
+            raise DatabaseException(f"Failed to fetch fact by ID: {e}")
     
     def delete_fact(self, fact_id: str) -> Dict[str, Any]:
         """Soft delete a fact (set is_active to False)"""
         try:
-            result = self.client.table('cat_facts')\
+            result = self.client.table(CAT_FACTS_TABLE)\
                 .update({'is_active': False, 'updated_at': datetime.utcnow().isoformat()})\
                 .eq('id', fact_id)\
                 .execute()
             
             if result.data:
+                logger.info(f"Successfully deleted fact: {fact_id}")
                 return {
                     "success": True,
-                    "message": "Fact deleted successfully"
+                    "message": SUCCESS_MESSAGES["fact_deleted"]
                 }
             else:
+                logger.warning(f"Attempted to delete non-existent fact: {fact_id}")
                 return {
                     "success": False,
-                    "message": "Fact not found"
+                    "message": ERROR_MESSAGES["fact_not_found"]
                 }
                 
         except Exception as e:
+            logger.error(f"Error deleting fact {fact_id}: {e}")
             return {
                 "success": False,
                 "message": f"Error deleting fact: {str(e)}"

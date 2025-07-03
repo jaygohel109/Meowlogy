@@ -19,10 +19,11 @@
 .catcare-speech-bubble {
   position: absolute;
   bottom: 60px;
-  width: 110px;
+  width: 140px;
   background: var(--card-bg);
   border: 2px solid var(--secondary);
   border-radius: 20px;
+  margin-right: 30px;
   padding: 10px 24px;
   font-size: 1rem;
   font-weight: 600;
@@ -131,13 +132,13 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .catcare-chat-message-ai {
-  background: var(--accent);
-  color: var(--text-dark);
+  background: var(--primary);
+  color: white;
   align-self: flex-start;
 }
 .catcare-chat-message-user {
-  background: var(--primary-light);
-  color: var(--text-dark);
+  background: var(--secondary);
+  color: white;
   align-self: flex-end;
 }
 
@@ -187,9 +188,9 @@
 
 @media (max-width: 500px) {
   .catcare-chat-window {
-    width: 98vw;
-    right: -16px;
-    left: -16px;
+    width: calc(100vw - 32px);
+    right: 16px;
+    left: 16px;
     min-width: unset;
     max-width: unset;
   }
