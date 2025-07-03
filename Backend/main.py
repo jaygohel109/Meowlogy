@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from Models.openAI_model import AIRequest
 from dotenv import load_dotenv
 import os
+import uvicorn
 import openai
 
 load_dotenv()
@@ -178,5 +179,5 @@ async def ask_ai(request: AIRequest):
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 
