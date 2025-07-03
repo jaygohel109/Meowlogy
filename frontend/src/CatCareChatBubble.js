@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './CatCareChatBubble.css';
-import { FaPaw } from 'react-icons/fa';
 
 const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/ask-ai`;
 
@@ -45,13 +44,15 @@ const CatCareChatBubble = () => {
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
+      
         if (value) {
           const chunk = decoder.decode(value);
           aiMessage += chunk;
+      
+          const currentMessage = aiMessage; // capture current state safely
           setMessages(prev => {
-            // Update the last AI message with the new chunk
             const updated = [...prev];
-            updated[updated.length - 1] = { sender: 'ai', text: aiMessage };
+            updated[updated.length - 1] = { sender: 'ai', text: currentMessage };
             return updated;
           });
         }
@@ -77,17 +78,6 @@ const CatCareChatBubble = () => {
             <button className="catcare-chat-close" onClick={() => setOpen(false)}>&times;</button>
           </div>
           <div className="catcare-chat-messages">
-            {/* {loading && (
-              <div className="catcare-chat-message catcare-chat-message-ai catcare-chat-loading">
-                <span className="">
-                  <div className="footer-paws">
-                    <FaPaw />
-                    <FaPaw />
-                    <FaPaw />
-                  </div>
-                </span>
-              </div>
-            )} */}
             {messages.map((msg, idx) => (
               <div
                 key={idx}

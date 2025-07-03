@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import { FaPaw, FaRandom, FaPlus, FaSyncAlt, FaSignOutAlt } from 'react-icons/fa';
@@ -20,7 +20,7 @@ function App() {
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
   // Fetch all facts
-  const fetchAllFacts = async () => {
+  const fetchAllFacts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/catfacts`);
@@ -35,7 +35,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]); // ✅ Add dependencies only if used inside the function
 
   // Fetch random fact
   const fetchRandomFact = async () => {
@@ -113,7 +113,7 @@ function App() {
     return () => {
       window.removeEventListener("mousemove", mouseMove);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchAllFacts]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
