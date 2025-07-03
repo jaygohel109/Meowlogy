@@ -18,39 +18,21 @@
 
 .catcare-speech-bubble {
   position: absolute;
-  bottom: 70px;
-  right: 50%;
-  transform: translateX(50%);
-  background: #fff;
-  border: 2px solid #222;
-  border-radius: 18px;
-  padding: 14px 32px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #222;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  animation: catcare-pop-in 0.6s cubic-bezier(0.68,-0.55,0.27,1.55);
-  min-width: 110px;
-  text-align: center;
+  bottom: 60px;
+  width: 110px;
+  background: var(--card-bg);
+  border: 2px solid var(--secondary);
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--secondary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   /* cursor: pointer; */
-  z-index: 2;
+  transition: transform 0.2s;
 }
-
-.catcare-speech-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  height: 22px;
-  background: #fff;
-  border-left: 2px solid #222;
-  border-bottom: 2px solid #222;
-  border-radius: 0 0 0 12px;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.04);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  z-index: 1;
+.catcare-speech-bubble:hover {
+  transform: scale(1.05);
 }
 
 .catcare-chat-gif {
@@ -91,39 +73,41 @@
   right: 0;
   width: 340px;
   max-width: 92vw;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 18px 18px 12px 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   display: flex;
   flex-direction: column;
   z-index: 1100;
   animation: catcare-pop-in 0.4s cubic-bezier(0.68,-0.55,0.27,1.55);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .catcare-chat-header {
-  background: #f6f6f6;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: 18px 18px 0 0;
+  border-color: #000000;
   padding: 14px 18px;
   font-weight: 700;
   font-size: 1.1rem;
-  color: #333;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .catcare-chat-close {
   background: none;
   border: none;
   font-size: 1.3rem;
-  color: #888;
+  color: rgba(255, 255, 255, 0.8);
   /* cursor: pointer; */
   padding: 0 4px;
   transition: color 0.2s;
 }
 .catcare-chat-close:hover {
-  color: #e57373;
+  color: var(--error);
 }
 
 .catcare-chat-messages {
@@ -132,7 +116,7 @@
   overflow-y: auto;
   max-height: 260px;
   min-height: 60px;
-  background: #fff;
+  background: var(--card-bg);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -147,13 +131,13 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .catcare-chat-message-ai {
-  background: #f1f8e9;
-  color: #333;
+  background: var(--accent);
+  color: var(--text-dark);
   align-self: flex-start;
 }
 .catcare-chat-message-user {
-  background: #e3eafc;
-  color: #222;
+  background: var(--primary-light);
+  color: var(--text-dark);
   align-self: flex-end;
 }
 
@@ -161,29 +145,30 @@
   display: flex;
   align-items: center;
   padding: 10px 12px 12px 12px;
-  border-top: 1px solid #ececec;
-  background: #fafbfc;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--background);
   border-radius: 0 0 12px 12px;
 }
 
 .catcare-chat-input {
   flex: 1 1 auto;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   padding: 8px 14px;
   font-size: 1rem;
   outline: none;
   margin-right: 8px;
-  background: #fff;
+  background: var(--card-bg);
   transition: border 0.2s;
 }
 .catcare-chat-input:focus {
-  border: 1.5px solid #a3c9f7;
+  border: 1.5px solid var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 126, 95, 0.1);
 }
 
 .catcare-chat-send {
-  background: #a3c9f7;
-  color: #fff;
+  background: var(--primary);
+  color: white;
   border: none;
   border-radius: 10px;
   padding: 8px 16px;
@@ -191,6 +176,13 @@
   font-weight: 600;
   /* cursor: not-allowed; */
   opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.catcare-chat-send:hover:not(:disabled) {
+  background: #FF6B4D;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
 }
 
 @media (max-width: 500px) {

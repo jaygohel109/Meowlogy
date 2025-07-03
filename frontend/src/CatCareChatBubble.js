@@ -8,7 +8,7 @@ const CatCareChatBubble = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
-    { sender: 'ai', text: 'Hi! Ask me anything about cat care 🐾' }
+    { sender: 'ai', text: 'Hi! I’m your Cat Care Buddy — Ask me anything about your feline friend! 🐾' }
   ]);
   const [loading, setLoading] = useState(false);
   const messageEndRef = useRef(null);
@@ -77,7 +77,7 @@ const CatCareChatBubble = () => {
             <button className="catcare-chat-close" onClick={() => setOpen(false)}>&times;</button>
           </div>
           <div className="catcare-chat-messages">
-            {loading && (
+            {/* {loading && (
               <div className="catcare-chat-message catcare-chat-message-ai catcare-chat-loading">
                 <span className="">
                   <div className="footer-paws">
@@ -87,7 +87,7 @@ const CatCareChatBubble = () => {
                   </div>
                 </span>
               </div>
-            )}
+            )} */}
             {messages.map((msg, idx) => (
               <div
                 key={idx}

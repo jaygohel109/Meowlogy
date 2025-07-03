@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
-import { FaPaw, FaRandom, FaPlus, FaSyncAlt } from 'react-icons/fa';
+import { FaPaw, FaRandom, FaPlus, FaSyncAlt, FaSignOutAlt } from 'react-icons/fa';
 import CatCareChatBubble from './CatCareChatBubble';
+import Login from './Login';
 
 
 function App() {
@@ -13,6 +14,8 @@ function App() {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -85,18 +88,47 @@ function App() {
     }
   };
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated');
+    const storedUsername = localStorage.getItem('username');
+    
+    if (authStatus === 'true' && storedUsername) {
+      setIsAuthenticated(true);
+      setUsername(storedUsername);
+    }
+  }, []);
+
   // Load facts on component mount
   useEffect(() => {
     const mouseMove = (e) => {
       setCursorPosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", mouseMove);
-    return () => {
+    
+    if (isAuthenticated) {
       fetchAllFacts();
+    }
+    
+    return () => {
       window.removeEventListener("mousemove", mouseMove);
     };
-    
-  }, []);
+  }, [isAuthenticated]);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    setUsername(localStorage.getItem('username'));
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('username');
+    setIsAuthenticated(false);
+    setUsername('');
+    setFacts([]);
+    setRandomFact(null);
+    setActiveTab('all');
+  };
 
   const cursorVariants = {
     default: {
@@ -104,6 +136,11 @@ function App() {
       y: cursorPosition.y - 25,
     },
   };
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="App">
@@ -123,6 +160,7 @@ function App() {
           />
           Meowlogy - Cat Facts
         </h1>
+        <h3>Welcome, {username}!</h3>
         <p>Discover amazing facts about our feline friends!</p>
       </header>
 
@@ -149,6 +187,13 @@ function App() {
           >
             <FaPlus className="tab-icon" />
             Add Fact
+          </button>
+          <button 
+            className={`tab ${activeTab === 'add1' ? 'active' : ''}`}
+            onClick={handleLogout} 
+          >
+            <FaSignOutAlt className="tab-icon" />
+            Logout
           </button>
           <img 
             src="http://thecraftchop.com/files/others/holdingcat.svg" 
