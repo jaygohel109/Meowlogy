@@ -26,7 +26,16 @@ function App() {
       const response = await fetch(`${API_BASE_URL}/catfacts`);
       if (response.ok) {
         const data = await response.json();
-        setFacts(data);
+        // Handle new API response structure
+        if (data.facts && Array.isArray(data.facts)) {
+          setFacts(data.facts);
+        } else if (Array.isArray(data)) {
+          // Fallback for old API structure
+          setFacts(data);
+        } else {
+          setFacts([]);
+          setMessage('Invalid response format from server');
+        }
       } else {
         setMessage('Failed to fetch facts');
       }
@@ -73,13 +82,13 @@ function App() {
       const data = await response.json();
       
       if (response.ok) {
-        setMessage(data.message);
+        setMessage(data.message || 'Fact added successfully');
         setNewFact('');
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
           fetchAllFacts(); // Refresh the facts list
         }
       } else {
-        setMessage(data.detail || 'Failed to add fact');
+        setMessage(data.detail || data.message || 'Failed to add fact');
       }
     } catch (error) {
       setMessage('Error connecting to server');

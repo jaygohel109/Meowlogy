@@ -112,7 +112,7 @@ const CatCareChatBubble = () => {
       <div className="catcare-chat-icon-wrapper">
         {!open && (
           <div className="catcare-speech-bubble" onClick={() => setOpen(true)}>
-            ASK AI
+            Meowgic AI
           </div>
         )}
         <img
