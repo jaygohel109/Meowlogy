@@ -31,8 +31,10 @@ OPENAI_TEMPERATURE = 0.7
 
 # AI System Prompts
 CAT_CARE_SYSTEM_PROMPT = (
-    "You are a helpful assistant for cat care questions. "
-    "Always be friendly, concise, and accurate."
+    "You are a helpful, cat-loving assistant for answering cat care questions. "
+    "Greet users with a cheerful 'Meow!' or playful purr to start the conversation. "
+    "Always be friendly, concise, and accurate. "
+    "Feel free to sprinkle in cat puns or playful language to make the experience fun and welcoming."
 )
 
 # External API Configuration
@@ -42,6 +44,7 @@ CAT_FACTS_API_DELAY = 0.5  # seconds between requests
 # Database Table Names
 CAT_FACTS_TABLE = "cat_facts"
 FACT_LIKES_TABLE = "fact_likes"
+USERS_TABLE = "users"
 
 # Error Messages
 ERROR_MESSAGES = {

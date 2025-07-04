@@ -24,7 +24,10 @@ from Models import (
     ErrorResponse,
     SuccessResponse,
     ImportFactsRequest,
-    ImportFactsResponse
+    ImportFactsResponse,
+    UserSignupRequest,
+    UserLoginRequest,
+    AuthResponse
 )
 from exceptions import (
     CatFactsException,
@@ -384,6 +387,82 @@ async def import_facts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to import facts: {str(e)}"
+        )
+
+
+# Authentication Endpoints
+@app.post("/auth/signup", response_model=AuthResponse)
+async def signup(
+    request: UserSignupRequest,
+    service: CatFactsService = Depends(get_cat_facts_service)
+):
+    """Sign up a new user."""
+    try:
+        result = service.db.create_user(
+            username=request.username,
+            email=request.email,
+            password=request.password
+        )
+        
+        if result["success"]:
+            return AuthResponse(
+                success=True,
+                message=result["message"],
+                user=result["data"]
+            )
+        else:
+            if result["status"] in ["duplicate_username", "duplicate_email"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=result["message"]
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=result["message"]
+                )
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in signup: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(
+    request: UserLoginRequest,
+    service: CatFactsService = Depends(get_cat_facts_service)
+):
+    """Login a user."""
+    try:
+        result = service.db.authenticate_user(
+            username=request.username,
+            password=request.password
+        )
+        
+        if result["success"]:
+            return AuthResponse(
+                success=True,
+                message=result["message"],
+                user=result["data"]
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=result["message"]
+            )
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in login: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
         )
 
 

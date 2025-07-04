@@ -213,4 +213,106 @@ class ImportFactsResponse(BaseModel):
                 "requested_count": 5,
                 "message": "Successfully imported 5 facts"
             }
+        }
+
+
+# User Authentication Models
+class UserSignupRequest(BaseModel):
+    """Request model for user signup."""
+    username: str = Field(..., description="Username for the account")
+    email: str = Field(..., description="Email address")
+    password: str = Field(..., description="Password for the account")
+    
+    @validator('username')
+    def validate_username(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Username cannot be empty")
+        if len(v.strip()) < 2:
+            raise ValueError("Username must be at least 2 characters long")
+        if len(v.strip()) > 50:
+            raise ValueError("Username must be no more than 50 characters long")
+        import re
+        if not re.match(r'^[a-zA-Z0-9_\s]+$', v.strip()):
+            raise ValueError("Username can only contain letters, numbers, spaces, and underscores")
+        return v.strip()
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Email cannot be empty")
+        # Simple email validation
+        if '@' not in v or '.' not in v:
+            raise ValueError("Invalid email format")
+        return v.strip().lower()
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if not v:
+            raise ValueError("Password cannot be empty")
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters long")
+        return v
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "john_doe",
+                "email": "john@example.com",
+                "password": "password123"
+            }
+        }
+
+
+class UserLoginRequest(BaseModel):
+    """Request model for user login."""
+    username: str = Field(..., description="Username or email")
+    password: str = Field(..., description="Password")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "john_doe",
+                "password": "password123"
+            }
+        }
+
+
+class UserResponse(BaseModel):
+    """Response model for user data."""
+    id: str = Field(..., description="User ID")
+    username: str = Field(..., description="Username")
+    email: str = Field(..., description="Email address")
+    auth_provider: str = Field(..., description="Authentication provider")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "username": "john_doe",
+                "email": "john@example.com",
+                "auth_provider": "local"
+            }
+        }
+
+
+class AuthResponse(BaseModel):
+    """Response model for authentication operations."""
+    success: bool = Field(..., description="Whether the operation was successful")
+    message: str = Field(..., description="Response message")
+    user: Optional[UserResponse] = Field(None, description="User data if successful")
+    token: Optional[str] = Field(None, description="Authentication token if successful")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Login successful",
+                "user": {
+                    "id": 1,
+                    "username": "john_doe",
+                    "email": "john@example.com",
+                    "auth_provider": "local"
+                },
+                "token": "jwt_token_here"
+            }
         } 

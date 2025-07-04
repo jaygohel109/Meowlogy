@@ -4,13 +4,16 @@ import { FaPaw, FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
 import { VALIDATION_RULES, ERROR_MESSAGES, API_BASE_URL } from '../utils/constants';
 
-function Login({ onLogin, onShowSignup }) {
+function Signup({ onSignupSuccess, onBackToLogin }) {
   // State management
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    email: '',
+    password: '',
+    confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
@@ -38,6 +41,20 @@ function Login({ onLogin, onShowSignup }) {
     return null;
   };
 
+  const validateEmail = (email) => {
+    if (!email || typeof email !== 'string') {
+      return ERROR_MESSAGES.EMAIL_REQUIRED;
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!VALIDATION_RULES.EMAIL.PATTERN.test(trimmedEmail)) {
+      return ERROR_MESSAGES.EMAIL_INVALID;
+    }
+
+    return null;
+  };
+
   const validatePassword = (password) => {
     if (!password || typeof password !== 'string') {
       return ERROR_MESSAGES.PASSWORD_REQUIRED;
@@ -45,6 +62,18 @@ function Login({ onLogin, onShowSignup }) {
 
     if (password.length < VALIDATION_RULES.PASSWORD.MIN_LENGTH) {
       return ERROR_MESSAGES.PASSWORD_TOO_SHORT;
+    }
+
+    return null;
+  };
+
+  const validateConfirmPassword = (confirmPassword) => {
+    if (!confirmPassword) {
+      return 'Please confirm your password';
+    }
+
+    if (confirmPassword !== formData.password) {
+      return 'Passwords do not match';
     }
 
     return null;
@@ -59,10 +88,22 @@ function Login({ onLogin, onShowSignup }) {
       newErrors.username = usernameError;
     }
 
+    // Validate email
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      newErrors.email = emailError;
+    }
+
     // Validate password
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
       newErrors.password = passwordError;
+    }
+
+    // Validate confirm password
+    const confirmPasswordError = validateConfirmPassword(formData.confirmPassword);
+    if (confirmPasswordError) {
+      newErrors.confirmPassword = confirmPasswordError;
     }
 
     setErrors(newErrors);
@@ -100,13 +141,14 @@ function Login({ onLogin, onShowSignup }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username: formData.username.trim(),
+          email: formData.email.trim().toLowerCase(),
           password: formData.password
         })
       });
@@ -119,13 +161,20 @@ function Login({ onLogin, onShowSignup }) {
         localStorage.setItem('username', data.user.username);
         localStorage.setItem('userId', data.user.id);
         
-        onLogin();
+        onSignupSuccess();
       } else {
-        setErrors({ general: data.detail || ERROR_MESSAGES.INVALID_CREDENTIALS });
+        // Handle specific error cases
+        if (data.detail === 'Username already exists') {
+          setErrors({ username: ERROR_MESSAGES.USERNAME_EXISTS });
+        } else if (data.detail === 'Email already exists') {
+          setErrors({ email: ERROR_MESSAGES.EMAIL_EXISTS });
+        } else {
+          setErrors({ general: data.detail || ERROR_MESSAGES.SIGNUP_FAILED });
+        }
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ general: ERROR_MESSAGES.LOGIN_FAILED });
+      console.error('Signup error:', error);
+      setErrors({ general: ERROR_MESSAGES.SIGNUP_FAILED });
     } finally {
       setLoading(false);
     }
@@ -133,6 +182,10 @@ function Login({ onLogin, onShowSignup }) {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   // Effects
@@ -172,8 +225,8 @@ function Login({ onLogin, onShowSignup }) {
             alt="Cat Angel" 
             className="login-logo"
           />
-          <h1>Welcome to Meowlogy</h1>
-          <p>Please login to access cat facts</p>
+          <h1>Join Meowlogy</h1>
+          <p>Create your account to access cat facts</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -205,6 +258,27 @@ function Login({ onLogin, onShowSignup }) {
           </div>
 
           <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <div className="input-container">
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Enter email"
+                required
+                className={`login-input ${errors.email ? 'error' : ''}`}
+                disabled={loading}
+              />
+              <FaPaw className="input-icon" />
+            </div>
+            {errors.email && (
+              <span className="field-error">{errors.email}</span>
+            )}
+          </div>
+
+          <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="input-container">
               <input
@@ -232,27 +306,55 @@ function Login({ onLogin, onShowSignup }) {
             )}
           </div>
 
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <div className="input-container">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                placeholder="Confirm password"
+                required
+                className={`login-input ${errors.confirmPassword ? 'error' : ''}`}
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={toggleConfirmPasswordVisibility}
+                disabled={loading}
+              >
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <span className="field-error">{errors.confirmPassword}</span>
+            )}
+          </div>
+
           <button 
             type="submit" 
             className="login-button"
-            disabled={loading || !formData.username || !formData.password}
+            disabled={loading || !formData.username || !formData.email || !formData.password || !formData.confirmPassword}
           >
             {loading ? (
               <div className="loading-spinner">
                 <div className="spinner"></div>
-                Logging in...
+                Creating account...
               </div>
             ) : (
               <>
                 <FaPaw className="paw-icon" />
-                Login
+                Sign Up
               </>
             )}
           </button>
         </form>
 
         <div className="login-hint">
-          <p>Don't have an account? <button onClick={onShowSignup} className="link-button">Sign up here</button></p>
+          <p>Already have an account? <button onClick={onBackToLogin} className="link-button">Login here</button></p>
         </div>
 
         <div className="login-footer">
@@ -267,4 +369,4 @@ function Login({ onLogin, onShowSignup }) {
   );
 }
 
-export default Login; 
+export default Signup; 

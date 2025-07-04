@@ -4,6 +4,7 @@ import './App.css';
 import { FaPaw, FaRandom, FaPlus, FaSyncAlt, FaSignOutAlt } from 'react-icons/fa';
 import CatCareChatBubble from './pages/CatCareChatBubble';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { TABS, API_BASE_URL, SUCCESS_MESSAGES, ERROR_MESSAGES } from './utils/constants';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
+  const [showSignup, setShowSignup] = useState(false);
 
   // Utility functions
   const showMessage = (text, isError = false) => {
@@ -126,12 +128,29 @@ function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
     setUsername(localStorage.getItem('username'));
+    setShowSignup(false);
     showMessage('Welcome back!');
+  };
+
+  const handleSignupSuccess = () => {
+    setIsAuthenticated(true);
+    setUsername(localStorage.getItem('username'));
+    setShowSignup(false);
+    showMessage('Account created successfully! Welcome to Meowlogy!');
+  };
+
+  const handleShowSignup = () => {
+    setShowSignup(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowSignup(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('username');
+    localStorage.removeItem('userId');
     setIsAuthenticated(false);
     setUsername('');
     setFacts([]);
@@ -191,9 +210,12 @@ function App() {
     },
   };
 
-  // Show login page if not authenticated
+  // Show login or signup page if not authenticated
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    if (showSignup) {
+      return <Signup onSignupSuccess={handleSignupSuccess} onBackToLogin={handleBackToLogin} />;
+    }
+    return <Login onLogin={handleLogin} onShowSignup={handleShowSignup} />;
   }
 
   return (
@@ -216,7 +238,7 @@ function App() {
           Meowlogy - Cat Facts
         </h1>
         <h3>Welcome, {username}!</h3>
-        <p>Discover amazing facts about our feline friends!</p>
+        <p>From tail to whisker, explore what makes cats so claw-some!</p>
       </header>
 
       <main className="App-main">

@@ -11,7 +11,10 @@ const VALIDATION_RULES = {
     PATTERN: /^[a-zA-Z0-9_\s]+$/
   },
   PASSWORD: {
-    MIN_LENGTH: 1
+    MIN_LENGTH: 6
+  },
+  EMAIL: {
+    PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   }
 };
 
@@ -27,9 +30,14 @@ const ERROR_MESSAGES = {
     USERNAME_TOO_LONG: `Username must be no more than ${VALIDATION_RULES.USERNAME.MAX_LENGTH} characters long`,
     USERNAME_INVALID: 'Username can only contain letters, numbers, spaces, and underscores',
     PASSWORD_REQUIRED: 'Password is required',
-    PASSWORD_TOO_SHORT: `Password must be at least ${VALIDATION_RULES.PASSWORD.MIN_LENGTH} character long`,
-    INVALID_CREDENTIALS: 'Invalid username or password. Please use JAY for both fields.',
+    PASSWORD_TOO_SHORT: `Password must be at least ${VALIDATION_RULES.PASSWORD.MIN_LENGTH} characters long`,
+    EMAIL_REQUIRED: 'Email is required',
+    EMAIL_INVALID: 'Please enter a valid email address',
+    INVALID_CREDENTIALS: 'Invalid username or password.',
     LOGIN_FAILED: 'Login failed. Please try again.',
+    SIGNUP_FAILED: 'Signup failed. Please try again.',
+    USERNAME_EXISTS: 'Username already exists.',
+    EMAIL_EXISTS: 'Email already exists.',
     SERVER_ERROR: 'Server error. Please try again later.',
     FETCH_FACTS_ERROR: 'Failed to fetch cat facts.',
     ADD_FACT_ERROR: 'Failed to add fact. Please try again.',
