@@ -2,69 +2,92 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import { FaPaw, FaRandom, FaPlus, FaSyncAlt, FaSignOutAlt } from 'react-icons/fa';
-import CatCareChatBubble from './CatCareChatBubble';
-import Login from './Login';
-
+import CatCareChatBubble from './pages/CatCareChatBubble';
+import Login from './pages/Login';
+import { TABS, API_BASE_URL, SUCCESS_MESSAGES, ERROR_MESSAGES } from './utils/constants';
 
 function App() {
+  // State management
   const [facts, setFacts] = useState([]);
   const [randomFact, setRandomFact] = useState(null);
   const [newFact, setNewFact] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(TABS.ALL);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+  // Utility functions
+  const showMessage = (text, isError = false) => {
+    setMessage(text);
+    if (!isError) {
+      setTimeout(() => setMessage(''), 5000);
+    }
+  };
 
-  // Fetch all facts
+  const clearMessage = () => setMessage('');
+
+  // API functions
   const fetchAllFacts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/catfacts`);
-      if (response.ok) {
-        const data = await response.json();
-        // Handle new API response structure
-        if (data.facts && Array.isArray(data.facts)) {
-          setFacts(data.facts);
-        } else if (Array.isArray(data)) {
-          // Fallback for old API structure
-          setFacts(data);
-        } else {
-          setFacts([]);
-          setMessage('Invalid response format from server');
-        }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Handle new API response structure
+      if (data.facts && Array.isArray(data.facts)) {
+        setFacts(data.facts);
+        showMessage(SUCCESS_MESSAGES.FACTS_LOADED);
+      } else if (Array.isArray(data)) {
+        // Fallback for old API structure
+        setFacts(data);
+        showMessage(SUCCESS_MESSAGES.FACTS_LOADED);
       } else {
-        setMessage('Failed to fetch facts');
+        setFacts([]);
+        throw new Error('Invalid response format from server');
       }
     } catch (error) {
-      setMessage('Error connecting to server');
+      console.error('Fetch facts error:', error);
+      const errorMessage = error.message.includes('Failed to fetch') 
+        ? ERROR_MESSAGES.NETWORK_ERROR 
+        : ERROR_MESSAGES.FETCH_FACTS_ERROR;
+      showMessage(errorMessage, true);
+      setFacts([]);
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]); // ✅ Add dependencies only if used inside the function
+  }, []);
 
-  // Fetch random fact
   const fetchRandomFact = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/catfacts/random`);
-      if (response.ok) {
-        const data = await response.json();
-        setRandomFact(data);
-      } else {
-        setMessage('Failed to fetch random fact');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      const data = await response.json();
+      setRandomFact(data);
+      showMessage(SUCCESS_MESSAGES.RANDOM_FACT_LOADED);
     } catch (error) {
-      setMessage('Error connecting to server');
+      console.error('Fetch random fact error:', error);
+      const errorMessage = error.message.includes('Failed to fetch') 
+        ? ERROR_MESSAGES.NETWORK_ERROR 
+        : ERROR_MESSAGES.RANDOM_FACT_ERROR;
+      showMessage(errorMessage, true);
+      setRandomFact(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add new fact
   const addFact = async (e) => {
     e.preventDefault();
     if (!newFact.trim()) return;
@@ -81,52 +104,29 @@ function App() {
 
       const data = await response.json();
       
-      if (response.ok) {
-        setMessage(data.message || 'Fact added successfully');
+      if (response.ok && (data.status === 'success' || data.success)) {
+        showMessage(data.message || SUCCESS_MESSAGES.FACT_ADDED);
         setNewFact('');
-        if (data.status === 'success' || data.success) {
-          fetchAllFacts(); // Refresh the facts list
-        }
+        await fetchAllFacts(); // Refresh the facts list
       } else {
-        setMessage(data.detail || data.message || 'Failed to add fact');
+        throw new Error(data.detail || data.message || ERROR_MESSAGES.ADD_FACT_ERROR);
       }
     } catch (error) {
-      setMessage('Error connecting to server');
+      console.error('Add fact error:', error);
+      const errorMessage = error.message.includes('Failed to fetch') 
+        ? ERROR_MESSAGES.NETWORK_ERROR 
+        : error.message;
+      showMessage(errorMessage, true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated');
-    const storedUsername = localStorage.getItem('username');
-    
-    if (authStatus === 'true' && storedUsername) {
-      setIsAuthenticated(true);
-      setUsername(storedUsername);
-    }
-  }, []);
-
-  // Load facts on component mount
-  useEffect(() => {
-    const mouseMove = (e) => {
-      setCursorPosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", mouseMove);
-    
-    if (isAuthenticated) {
-      fetchAllFacts();
-    }
-    
-    return () => {
-      window.removeEventListener("mousemove", mouseMove);
-    };
-  }, [isAuthenticated, fetchAllFacts]);
-
+  // Authentication functions
   const handleLogin = () => {
     setIsAuthenticated(true);
     setUsername(localStorage.getItem('username'));
+    showMessage('Welcome back!');
   };
 
   const handleLogout = () => {
@@ -136,9 +136,54 @@ function App() {
     setUsername('');
     setFacts([]);
     setRandomFact(null);
-    setActiveTab('all');
+    setActiveTab(TABS.ALL);
+    showMessage('Logged out successfully!');
   };
 
+  // Event handlers
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === TABS.RANDOM && !randomFact) {
+      fetchRandomFact();
+    }
+  };
+
+  const handleRefreshFacts = () => {
+    fetchAllFacts();
+  };
+
+  // Effects
+  useEffect(() => {
+    // Check authentication status on component mount
+    const authStatus = localStorage.getItem('isAuthenticated');
+    const storedUsername = localStorage.getItem('username');
+    
+    if (authStatus === 'true' && storedUsername) {
+      setIsAuthenticated(true);
+      setUsername(storedUsername);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Mouse cursor tracking
+    const mouseMove = (e) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", mouseMove);
+    
+    return () => {
+      window.removeEventListener("mousemove", mouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Load facts when authenticated
+    if (isAuthenticated) {
+      fetchAllFacts();
+    }
+  }, [isAuthenticated, fetchAllFacts]);
+
+  // Animation variants
   const cursorVariants = {
     default: {
       x: cursorPosition.x - 25,
@@ -154,6 +199,7 @@ function App() {
   return (
     <div className="App">
       <motion.div className="cursor" variants={cursorVariants} animate="default"/>
+      
       <header className="App-header">
         <h1>
           <img 
@@ -177,28 +223,28 @@ function App() {
         {/* Navigation Tabs */}
         <div className="tabs">
           <button 
-            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
+            className={`tab ${activeTab === TABS.ALL ? 'active' : ''}`}
+            onClick={() => handleTabChange(TABS.ALL)}
           >
             <FaPaw className="tab-icon" />
             All Facts
           </button>
           <button 
-            className={`tab ${activeTab === 'random' ? 'active' : ''}`}
-            onClick={() => setActiveTab('random')}
+            className={`tab ${activeTab === TABS.RANDOM ? 'active' : ''}`}
+            onClick={() => handleTabChange(TABS.RANDOM)}
           >
             <FaRandom className="tab-icon" />
             Random Fact
           </button>
           <button 
-            className={`tab ${activeTab === 'add' ? 'active' : ''}`}
-            onClick={() => setActiveTab('add')}
+            className={`tab ${activeTab === TABS.ADD ? 'active' : ''}`}
+            onClick={() => handleTabChange(TABS.ADD)}
           >
             <FaPlus className="tab-icon" />
             Add Fact
           </button>
           <button 
-            className={`tab ${activeTab === 'add1' ? 'active' : ''}`}
+            className={`tab ${activeTab === TABS.LOGOUT ? 'active' : ''}`}
             onClick={handleLogout} 
           >
             <FaSignOutAlt className="tab-icon" />
@@ -213,9 +259,9 @@ function App() {
 
         {/* Message Display */}
         {message && (
-          <div className={`message ${message.includes('Error') ? 'error' : 'success'}`}>
+          <div className={`message ${message.includes('Error') || message.includes('Failed') ? 'error' : 'success'}`}>
             {message}
-            <button onClick={() => setMessage('')} className="close-btn">×</button>
+            <button onClick={clearMessage} className="close-btn">×</button>
           </div>
         )}
 
@@ -228,11 +274,11 @@ function App() {
         )}
 
         {/* All Facts Tab */}
-        {activeTab === 'all' && (
+        {activeTab === TABS.ALL && (
           <div className="facts-container">
             <div className="section-header">
               <h2>All Cat Facts</h2>
-              <button onClick={fetchAllFacts} className="refresh-btn">
+              <button onClick={handleRefreshFacts} className="refresh-btn">
                 <FaSyncAlt className="refresh-icon" />
                 Refresh
               </button>
@@ -252,7 +298,7 @@ function App() {
         )}
 
         {/* Random Fact Tab */}
-        {activeTab === 'random' && (
+        {activeTab === TABS.RANDOM && (
           <div className="random-fact-container">
             <h2>Random Cat Fact</h2>
             <button onClick={fetchRandomFact} className="random-btn">
@@ -267,7 +313,7 @@ function App() {
         )}
 
         {/* Add Fact Tab */}
-        {activeTab === 'add' && (
+        {activeTab === TABS.ADD && (
           <div className="add-fact-container">
             <h2>Add New Cat Fact</h2>
             <form onSubmit={addFact} className="add-fact-form">
@@ -277,6 +323,7 @@ function App() {
                 placeholder="Enter your cat fact here..."
                 rows="4"
                 required
+                disabled={loading}
               />
               <button type="submit" disabled={loading || !newFact.trim()}>
                 {loading ? 'Adding...' : 'Add Fact'}
