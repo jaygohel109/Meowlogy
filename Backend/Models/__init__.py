@@ -14,7 +14,10 @@ from .cat_facts_models import (
     ErrorResponse,
     SuccessResponse,
     ImportFactsRequest,
-    ImportFactsResponse
+    ImportFactsResponse,
+    UserSignupRequest,
+    UserLoginRequest,
+    AuthResponse
 )
 
 __all__ = [
@@ -27,5 +30,10 @@ __all__ = [
     "CatFactDeleteResponse",
     "HealthCheckResponse",
     "ErrorResponse",
-    "SuccessResponse"
+    "SuccessResponse",
+    "ImportFactsRequest",
+    "ImportFactsResponse",
+    "UserSignupRequest",
+    "UserLoginRequest",
+    "AuthResponse"
 ] 

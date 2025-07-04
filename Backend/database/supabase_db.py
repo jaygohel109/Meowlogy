@@ -4,11 +4,14 @@ from typing import List, Optional, Dict, Any
 from supabase import create_client, Client
 import uuid
 import logging
+import hashlib
+import secrets
 from constants import (
     SUPABASE_URL, 
     SUPABASE_ANON_KEY, 
     CAT_FACTS_TABLE, 
     FACT_LIKES_TABLE,
+    USERS_TABLE,
     ERROR_MESSAGES,
     SUCCESS_MESSAGES
 )
@@ -294,4 +297,127 @@ class SupabaseCatFactsDB:
             return {
                 "success": False,
                 "message": f"Error deleting fact: {str(e)}"
-            } 
+            }
+    
+    # User Authentication Methods
+    def _hash_password(self, password: str) -> str:
+        """Hash a password using SHA-256 with salt."""
+        salt = secrets.token_hex(16)
+        hash_obj = hashlib.sha256()
+        hash_obj.update((password + salt).encode('utf-8'))
+        return f"{salt}${hash_obj.hexdigest()}"
+    
+    def _verify_password(self, password: str, hashed_password: str) -> bool:
+        """Verify a password against its hash."""
+        try:
+            salt, hash_value = hashed_password.split('$', 1)
+            hash_obj = hashlib.sha256()
+            hash_obj.update((password + salt).encode('utf-8'))
+            return hash_obj.hexdigest() == hash_value
+        except Exception:
+            return False
+    
+    def create_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
+        """Create a new user in the database."""
+        try:
+            # Check if username already exists
+            existing_username = self.client.table(USERS_TABLE).select('id').eq('username', username).execute()
+            if existing_username.data:
+                return {
+                    "success": False,
+                    "message": "Username already exists",
+                    "status": "duplicate_username"
+                }
+            
+            # Check if email already exists
+            existing_email = self.client.table(USERS_TABLE).select('id').eq('email', email.lower()).execute()
+            if existing_email.data:
+                return {
+                    "success": False,
+                    "message": "Email already exists",
+                    "status": "duplicate_email"
+                }
+            
+            # Hash password
+            hashed_password = self._hash_password(password)
+            
+            # Insert new user
+            result = self.client.table(USERS_TABLE).insert({
+                'username': username,
+                'email': email.lower(),
+                'password_hash': hashed_password,
+                'auth_provider': 'local'
+            }).execute()
+            
+            if result.data:
+                user_data = result.data[0]
+                # Remove password from response
+                user_data.pop('password_hash', None)
+                logger.info(f"Successfully created user: {username}")
+                return {
+                    "success": True,
+                    "message": "User created successfully",
+                    "status": "success",
+                    "data": user_data
+                }
+            else:
+                logger.error("Failed to create user - no data returned")
+                return {
+                    "success": False,
+                    "message": "Failed to create user",
+                    "status": "error"
+                }
+                
+        except Exception as e:
+            logger.error(f"Database error while creating user: {e}")
+            return {
+                "success": False,
+                "message": f"Database error: {str(e)}",
+                "status": "error"
+            }
+    
+    def authenticate_user(self, username: str, password: str) -> Dict[str, Any]:
+        """Authenticate a user with username/email and password."""
+        try:
+            # Try to find user by username or email
+            # First try username
+            result = self.client.table(USERS_TABLE).select('*').eq('username', username).execute()
+            
+            # If not found by username, try email
+            if not result.data:
+                result = self.client.table(USERS_TABLE).select('*').eq('email', username.lower()).execute()
+            
+            if not result.data:
+                return {
+                    "success": False,
+                    "message": "Invalid username or password",
+                    "status": "invalid_credentials"
+                }
+            
+            user = result.data[0]
+            
+            # Verify password
+            if not self._verify_password(password, user['password_hash']):
+                return {
+                    "success": False,
+                    "message": "Invalid username or password",
+                    "status": "invalid_credentials"
+                }
+            
+            # Remove password from response
+            user.pop('password_hash', None)
+            logger.info(f"Successfully authenticated user: {user['username']}")
+            return {
+                "success": True,
+                "message": "Authentication successful",
+                "status": "success",
+                "data": user
+            }
+                
+        except Exception as e:
+            logger.error(f"Database error while authenticating user: {e}")
+            return {
+                "success": False,
+                "message": f"Database error: {str(e)}",
+                "status": "error"
+            }
