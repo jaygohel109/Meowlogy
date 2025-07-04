@@ -124,6 +124,11 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.login-input.error {
+  border-color: #f44336;
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
 .input-icon {
   position: absolute;
   right: 15px;
@@ -143,8 +148,20 @@
   transition: color 0.3s ease;
 }
 
-.password-toggle:hover {
+.password-toggle:hover:not(:disabled) {
   color: #667eea;
+}
+
+.password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.field-error {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 4px;
+  padding-left: 4px;
 }
 
 .login-button {

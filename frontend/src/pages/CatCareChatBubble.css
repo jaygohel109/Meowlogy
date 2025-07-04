@@ -98,6 +98,40 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.catcare-chat-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catcare-chat-subtitle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.catcare-chat-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.catcare-chat-clear {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.catcare-chat-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
 .catcare-chat-close {
   background: none;
   border: none;
@@ -130,6 +164,18 @@
   max-width: 80%;
   word-break: break-word;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.catcare-chat-message-content {
+  margin-bottom: 4px;
+}
+
+.catcare-chat-message-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  text-align: right;
+  margin-top: 4px;
 }
 .catcare-chat-message-ai {
   background: var(--primary);
@@ -165,6 +211,55 @@
 .catcare-chat-input:focus {
   border: 1.5px solid var(--primary);
   box-shadow: 0 0 0 3px rgba(255, 126, 95, 0.1);
+}
+
+.catcare-chat-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.catcare-chat-error {
+  background: #fee;
+  color: #c33;
+  padding: 8px 12px;
+  margin: 0 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  border: 1px solid #fcc;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.loading-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+  animation: dots 1.4s ease-in-out infinite both;
+}
+
+.loading-dots .dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots .dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .catcare-chat-send {
