@@ -140,6 +140,7 @@ Meowlogy/
 │   │   ├── App.css          # Custom styling
 │   │   ├── pages/           # Page components
 │   │   │   ├── Login.js
+│   │   │   ├── Signup.js
 │   │   │   └── CatCareChatBubble.js
 │   │   └── utils/           # Utilities
 │   │       └── constants.js
@@ -154,6 +155,10 @@ Meowlogy/
 ---
 
 ## 🔌 **API Endpoints**
+### **Authentication**
+- `POST /auth/signup` - Register a new user account
+- `POST /auth/login` - Authenticate existing user
+
 
 ### **Core Cat Facts**
 - `GET /catfacts` - Get all cat facts
