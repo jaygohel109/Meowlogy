@@ -1,7 +1,20 @@
 import requests
 import time
 import logging
-from Meowlogy.Backend.database.supabase_db import SupabaseCatFactsDB
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables first, before importing other modules
+env_path = Path(__file__).parent.parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"Loaded environment variables from: {env_path}")
+else:
+    print(f"Warning: .env file not found at {env_path}")
+    print("Make sure you have a .env file with SUPABASE_URL and SUPABASE_ANON_KEY")
+
+from database.supabase_db import SupabaseCatFactsDB
 from constants import (
     CAT_FACTS_API_URL, 
     CAT_FACTS_API_DELAY, 
